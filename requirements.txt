@@ -1,4 +1,7 @@
 langchain
 sentence-transformers
 chromadb
+bs4
+requests
+tiktoken
 -e .
