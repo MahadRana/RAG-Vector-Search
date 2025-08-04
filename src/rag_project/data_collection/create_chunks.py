@@ -21,8 +21,7 @@ def chunk_text(text:str, id: str, max_tokens:int=500, overlap:int=100) -> List[s
     start = 0
     chunk_num = 1
     while start < len(all_tokens):
-        end = start + max_tokens
-        end = min(end, all_tokens)
+        end = min(start + max_tokens, len(all_tokens))
         try:
             enc_chunk = all_tokens[start:end]
             chunk = enc.decode(enc_chunk)
@@ -31,23 +30,24 @@ def chunk_text(text:str, id: str, max_tokens:int=500, overlap:int=100) -> List[s
             raise CustomException(e,sys)
         chunks.append(chunk)
         logging.info(f"chunk_text: Chunk {chunk_num} successfully created")
+        if end == len(all_tokens):
+            break
         chunk_num += 1
         start = end-overlap
     logging.info("chunk_text: All chunks created!")
     return chunks
 
-def make_chunk_records(chunks: List[str], doc:dict) -> List[dict]:
-    logging.info(f"make_chunk_records: Creating records for {doc['id']}")
+def make_chunk_records(chunks: List[str], url:str) -> List[dict]:
+    logging.info(f"make_chunk_records: Creating records for {url}")
     records = []
     for i, chunk in enumerate(chunks):
         try:
             records.append({
-                "id": f"{doc['id']}_chunk{i}",
+                "id": f"{url}_chunk{i}",
                 "text": chunk,
                 "metadata": {
-                    **doc["metadata"],
                     "chunk_index": i,        
-                    "source_id": doc["id"]
+                    "source_id": url
                 }
             })
         except Exception as e:

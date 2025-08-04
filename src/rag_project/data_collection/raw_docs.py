@@ -7,11 +7,16 @@ from src.logger import logging
 
 def load_html_page(url:str) -> str:
     try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/116.0.0.0 Safari/537.36",
+        }
         logging.info(f"load_html_page: fetching URL: {url}")
-        response = response.get(url)
+        response = requests.get(url, headers=headers)
         logging.debug(f"load_html_page: got response {response.status_code} for {url}")
         response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html-parser')
+        soup = BeautifulSoup(response.text, "html.parser")
         main = soup.find("div", class_='main_content') or soup
         paragraphs = main.find_all("p")
         logging.info(f"load_html_page: extracted {len(paragraphs)} <p> tags from {url}")
@@ -32,6 +37,6 @@ def load_all_pages(url_lst:List) -> List:
             "text": text,
             "metadata": {"source": url},
         })
-    logging.info("load_all_pages: all pages loaded successfully!")
+    logging.info("load_all_pages: pages loaded successfully!")
     return raw_docs
     

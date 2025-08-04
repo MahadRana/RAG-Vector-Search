@@ -10,5 +10,6 @@ client = PersistentClient(
 
 logging.info("Client Created")
 
+client.delete_collection(name='RAG_Vector')
 collection = client.get_or_create_collection(name='RAG_Vector')
 logging.info("Vector Collection Created/Retrieved")
