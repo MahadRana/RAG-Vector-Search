@@ -21,7 +21,7 @@ def get_most_relevant(query, num_results=3):
             n_results = num_results
         )
         logging.info("get_most_relevant: Data retrieval complete!")
-        return documents
+        return "\n\n".join(documents.documents)
     except Exception as e:
         logging.error(f"get_most_relevant: Retrieval for relevant pages failed.", exc_info=True)
         raise CustomException(e,sys)

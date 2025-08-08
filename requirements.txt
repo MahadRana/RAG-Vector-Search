@@ -4,4 +4,7 @@ chromadb
 bs4
 requests
 tiktoken
+python-dotenv
+openai
+langchain
 -e .

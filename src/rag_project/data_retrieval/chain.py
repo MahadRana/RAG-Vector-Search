@@ -1,0 +1,40 @@
+import os
+from dotenv import load_dotenv
+from langchain.chat_models import ChatOpenAI
+from langchain_core.output_parsers.json import JsonOutputParser
+from langchain_core.prompts.chat import ChatPromptTemplate
+from langchain_chroma import Chroma
+from langchain_core.runnables import RunnablePassthrough
+
+
+load_dotenv()
+
+OPENAI_API_KEY = os.environ.get("API_KEY")
+OPENAI_MODEL = os.environ.get("MODEL_NAME")
+
+llm = ChatOpenAI(openai_api_key = OPENAI_API_KEY, model_name=OPENAI_MODEL)
+
+parser = JsonOutputParser()
+
+vectordb = Chroma(collection_name="RAG_Vector", persist_directory='./chroma_db')
+retriever = vectordb.as_retriever(search_kwargs={"k": 3})
+
+template = ChatPromptTemplate(
+    ("system", "You are a PC Troubleshooting Assistant. Only return valid JSON in the form: {\"answer\": string, \"sources\": [string]}"),
+    ("human", "Use the following excerpts to answer the question. Cite sources verbatim. If the answer is not found, return 'I don't know'. Excerpts: {retrieved_passages}. Question: {question}")
+)
+
+def format_docs(docs):
+    return "\n\n".join(f"{doc.page_content}\n(source: {doc.metadata.get('source_id')})"
+                       for doc in docs)
+
+
+def llm_chain(question):
+    chain = {"retrieved_passages": retriever | format_docs, "question":RunnablePassthrough()} | prompt | llm | parser
+    return chain.invoke({"question":question})
+    
+
+
+
+
+
