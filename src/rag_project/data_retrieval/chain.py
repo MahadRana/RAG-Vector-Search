@@ -1,10 +1,12 @@
 import os
 from dotenv import load_dotenv
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_chroma import Chroma
 from langchain_core.runnables import RunnablePassthrough
+from langchain_openai import OpenAIEmbeddings
+
 
 
 load_dotenv()
@@ -14,9 +16,17 @@ OPENAI_MODEL = os.environ.get("MODEL_NAME")
 
 llm = ChatOpenAI(openai_api_key = OPENAI_API_KEY, model_name=OPENAI_MODEL)
 
+EMBED_MODEL = "text-embedding-3-small"   
+embeddings = OpenAIEmbeddings(model=EMBED_MODEL, api_key = OPENAI_API_KEY)
+
 parser = JsonOutputParser()
 
-vectordb = Chroma(collection_name="RAG_Vector", persist_directory='./chroma_db')
+vectordb = Chroma(
+    collection_name="RAG_Vector_openai",
+    embedding_function=embeddings,
+    persist_directory="./chroma_db",
+)
+
 retriever = vectordb.as_retriever(search_kwargs={"k": 3})
 
 template = ChatPromptTemplate(
@@ -25,13 +35,13 @@ template = ChatPromptTemplate(
 )
 
 def format_docs(docs):
-    return "\n\n".join(f"{doc.page_content}\n(source: {doc.metadata.get('source_id')})"
+    return "\n\n".join(f"{doc.page_content}\n(source: {doc.metadata.get('source')})"
                        for doc in docs)
 
 
 def llm_chain(question):
-    chain = {"retrieved_passages": retriever | format_docs, "question":RunnablePassthrough()} | prompt | llm | parser
-    return chain.invoke({"question":question})
+    chain = {"retrieved_passages": retriever | format_docs, "question":RunnablePassthrough()} | template | llm | parser
+    return chain.invoke(question)
     
 
 

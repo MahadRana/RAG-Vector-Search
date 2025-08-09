@@ -24,11 +24,11 @@ vectordb = Chroma(
 splitter = RecursiveCharacterTextSplitter(
     chunk_size=500,
     chunk_overlap=100,
-    length_function=len,  # character-based; switch to token-based if needed
+    length_function=len,
 )
 
 def clean_text(t: str) -> str:
-    t = " ".join(t.split())           # collapse whitespace
+    t = " ".join(t.split())
     return t.strip()
 
 def chunk_text(url:str):
