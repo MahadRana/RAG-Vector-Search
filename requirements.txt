@@ -1,4 +1,5 @@
 langchain
+langchain_openai
 sentence_transformers
 chromadb
 bs4
@@ -6,5 +7,4 @@ requests
 tiktoken
 python-dotenv
 openai
-langchain
 -e .

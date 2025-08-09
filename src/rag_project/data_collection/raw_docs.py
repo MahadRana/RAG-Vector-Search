@@ -1,6 +1,5 @@
 import requests                     
 from bs4 import BeautifulSoup
-from typing import List    
 import sys
 from src.exception import CustomException
 from src.logger import logging
@@ -24,19 +23,4 @@ def load_html_page(url:str) -> str:
     except Exception as e:
         logging.error(f"load_html_page: error fetching {url}: {e}", exc_info=True)
         raise CustomException(e,sys)
-    
-
-def load_all_pages(url_lst:List) -> List:
-    logging.info(f"load_all_pages: Retriving text from {len(url_lst)} pages")
-    raw_docs = []
-    for idx, url in enumerate(url_lst):
-        logging.info(f"load_all_pages: loading page {idx+1}/{len(url_lst)}: {url}")
-        text = load_html_page(url)
-        raw_docs.append({
-            "id": url,           
-            "text": text,
-            "metadata": {"source": url},
-        })
-    logging.info("load_all_pages: pages loaded successfully!")
-    return raw_docs
     

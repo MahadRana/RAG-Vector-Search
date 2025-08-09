@@ -1,40 +1,43 @@
 from src.rag_project.data_collection.raw_docs import load_html_page
-from src.rag_project.data_collection.create_chunks import make_chunk_records
-from src.rag_project.data_collection.create_chunks import chunk_text
-from chromadb import PersistentClient
-from chromadb.config import DEFAULT_TENANT, DEFAULT_DATABASE
+from src.rag_project.data_collection.docs_to_chunks import chunk_text
+from langchain_chroma import Chroma
+from langchain_openai import OpenAIEmbeddings
 from src.logger import logging
 from src.exception import CustomException
 import sys
+from dotenv import load_dotenv
+import os
 
-client = PersistentClient(
-    path = './chroma_db',
-    tenant=DEFAULT_TENANT,
-    database=DEFAULT_DATABASE,
+load_dotenv()
+OPENAI_API_KEY = os.environ.get("API_KEY")
+
+EMBED_MODEL = "text-embedding-3-small"   
+embeddings = OpenAIEmbeddings(model=EMBED_MODEL, api_key = OPENAI_API_KEY)
+
+vectordb = Chroma(
+    collection_name="RAG_Vector_openai",
+    embedding_function=embeddings,
+    persist_directory="./chroma_db",
 )
-
-collection = client.get_or_create_collection(name='RAG_Vector')
 
 def data_pipeline(url_lst):
     try:
         logging.info("=" * 40)
         logging.info("STARTING DATA PIPELINE")
         logging.info("=" * 40)
-
+        total_added = 0
         for url in url_lst:
-            raw_text = load_html_page(url)
-            records = make_chunk_records(chunks=chunk_text(text=raw_text, id=url), url=url)
-            del raw_text
-            for record in records:
-                collection.add(
-                    ids = [record['id']],
-                    documents = [record['text']],
-                    metadatas = [record['metadata']]
-                )
-            del records
+            chunks = chunk_text(url)
+            if len(chunks) == 0 or not chunks:
+                logging.warning(f"[SKIP] {url}: no chunks")
+                continue
+            ids = [c.metadata["chunk_id"] for c in chunks]
+            vectordb.add_documents(documents=chunks, ids=ids)
+            total_added += len(chunks)
+            logging.info(f"{len(chunks)} chunks added for {url}")
         # Pipeline end header
         logging.info("=" * 40)
-        logging.info("DATA PIPELINE COMPLETE")
+        logging.info(f"DATA PIPELINE COMPLETE. {total_added} CHUNKS ADDED")
         logging.info("=" * 40)
 
     except Exception as e:
@@ -68,6 +71,5 @@ if __name__ == "__main__":
         "https://www.lifewire.com/why-restarting-fixes-computer-problems-8733211",
         "https://www.lifewire.com/fix-common-windows-11-issues-8780752",
     ]
-    logging.info(f"Pre-ingest count: {collection.count()}")
+
     data_pipeline(article_urls)
-    logging.info(f"Post-ingest count: {collection.count()}")
