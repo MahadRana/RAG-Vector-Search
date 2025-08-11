@@ -4,7 +4,10 @@ sentence_transformers
 chromadb
 bs4
 requests
-tiktoken
 python-dotenv
 openai
+fastapi
+uvicorn
+pydantic
+mangum
 -e .
