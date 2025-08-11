@@ -14,7 +14,7 @@ load_dotenv()
 OPENAI_API_KEY = os.environ.get("API_KEY")
 OPENAI_MODEL = os.environ.get("MODEL_NAME")
 
-llm = ChatOpenAI(openai_api_key = OPENAI_API_KEY, model_name=OPENAI_MODEL)
+llm = ChatOpenAI(openai_api_key = OPENAI_API_KEY, model=OPENAI_MODEL)
 
 EMBED_MODEL = "text-embedding-3-small"   
 embeddings = OpenAIEmbeddings(model=EMBED_MODEL, api_key = OPENAI_API_KEY)
@@ -27,12 +27,15 @@ vectordb = Chroma(
     persist_directory="./chroma_db",
 )
 
-retriever = vectordb.as_retriever(search_kwargs={"k": 3})
+retriever = vectordb.as_retriever(search_kwargs={"k": 6})
 
-template = ChatPromptTemplate(
-    ("system", "You are a PC Troubleshooting Assistant. Only return valid JSON in the form: {\"answer\": string, \"sources\": [string]}"),
-    ("human", "Use the following excerpts to answer the question. Cite sources verbatim. If the answer is not found, return 'I don't know'. Excerpts: {retrieved_passages}. Question: {question}")
-)
+template = ChatPromptTemplate([
+    ("system", "You are a PC Troubleshooting Assistant. Only return valid JSON in the form: "
+    "{{\"answer\": string, \"sources\": [string]}}"),
+    ("human", "Use the following excerpts to answer the question. Cite sources verbatim. "
+    "If the answer is not found, return {{\"answer\":\"I don\'t know\",\"sources\":[]}}. "
+    "Excerpts: {retrieved_passages}. Question: {question}")
+])
 
 def format_docs(docs):
     return "\n\n".join(f"{doc.page_content}\n(source: {doc.metadata.get('source')})"
@@ -43,7 +46,13 @@ def llm_chain(question):
     chain = {"retrieved_passages": retriever | format_docs, "question":RunnablePassthrough()} | template | llm | parser
     return chain.invoke(question)
     
+if __name__ == "__main__":
+    question = "How do I fix a PC that won't turn on?"
 
+    result = llm_chain(question)
+
+    print("Answer:", result.get("answer"))
+    print("Sources:", result.get("sources"))
 
 
 
